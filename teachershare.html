@@ -60,7 +60,7 @@
         <button onclick="switchTab('students')" id="btn-students" class="nav-btn hide-in-notice whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2">👨‍🎓 學生名單</button>
       </nav>
     </div>
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.31 (專刊歷程優化版)</div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3">雲端同步模組 v4.4 (修復陣列轉換與優化行事曆)</div>
   </aside>
 
   <main class="flex-1 p-6 overflow-y-auto">
@@ -479,7 +479,7 @@
               <input type="text" id="pointReason" class="w-full border rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none mb-1.5" placeholder="例如：主動幫忙、作業完成佳..." />
               <div class="flex flex-wrap gap-1.5 text-xs">
                 <span class="text-gray-400 font-medium py-1">常用：</span>
-                <button onclick="setPointReason('主動幫忙')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">主動幫忙</button>
+                <button onclick="setPointReason('主動幫忙')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">主ষ্ঠান幫忙</button>
                 <button onclick="setPointReason('作業優良')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">作業優良</button>
                 <button onclick="setPointReason('上課專心')" class="bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 px-2 py-0.5 rounded">上課專心</button>
               </div>
@@ -858,6 +858,32 @@
       db.ref(dbPath).on('value', (snapshot) => {
         appState = snapshot.val() || {};
         
+        // --- 核心修復：Firebase 陣列物件化預防機制 ---
+        // Firebase 會將發生索引缺漏的陣列轉型為物件，這裡統一強制正規化還原為陣列，防止系統渲染崩潰
+        const arrayKeys = ['students', 'contactBooks', 'attendanceLogs', 'corridorLogs', 'calendarEvents', 'todoTasks', 'publications', 'writingTags', 'pubTags', 'excellentWritings', 'pointLogs', 'classPointLogs', 'rewards', 'classRewards'];
+        arrayKeys.forEach(key => {
+          if (appState[key] && !Array.isArray(appState[key])) {
+            appState[key] = Object.values(appState[key]);
+          }
+        });
+        // 針對待辦事項內的巢狀陣列進行保護
+        if (appState.todoTasks) {
+          appState.todoTasks.forEach(t => {
+            if (t.pendingStudentIds && !Array.isArray(t.pendingStudentIds)) t.pendingStudentIds = Object.values(t.pendingStudentIds);
+          });
+        }
+        if (appState.publications) {
+          appState.publications.forEach(p => {
+            if (p.selectedStudentIds && !Array.isArray(p.selectedStudentIds)) p.selectedStudentIds = Object.values(p.selectedStudentIds);
+          });
+        }
+        if (appState.excellentWritings) {
+          appState.excellentWritings.forEach(w => {
+            if (w.selectedStudentIds && !Array.isArray(w.selectedStudentIds)) w.selectedStudentIds = Object.values(w.selectedStudentIds);
+          });
+        }
+        // ---------------------------------------------
+        
         setTodayDate();
         renderHistoryList();
         renderStudentGrid();
@@ -874,8 +900,6 @@
         renderCorridorStudentOptions();
         renderCorridorList();
         renderCorridorStatsTable();
-        
-        // 載入時初始化專刊與繕寫模組
         initPublicationModule();
       });
     };
@@ -1363,7 +1387,7 @@
       if (!student) return;
 
       document.getElementById('indTodoStudentName').innerText = `${student.seatNo} ${student.name}`;
-      const studentTasks = tasks.filter(t => t.pendingStudentIds.includes(studentId));
+      const studentTasks = tasks.filter(t => (t.pendingStudentIds || []).includes(studentId));
       let totalOverdueDays = 0;
       const listContainer = document.getElementById('indTodoList');
 
@@ -1388,7 +1412,7 @@
       if (tasks.length === 0) { container.innerHTML = '<p class="text-gray-400 text-sm py-4">目前沒有追蹤中的未完成項目 🎉</p>'; return; }
 
       container.innerHTML = tasks.map(t => {
-        const pendingStudents = students.filter(s => t.pendingStudentIds.includes(s.id));
+        const pendingStudents = students.filter(s => (t.pendingStudentIds || []).includes(s.id));
         return `<div class="p-4 bg-gray-50 border rounded-xl space-y-3 shadow-sm"><div class="flex justify-between items-start border-b pb-2"><div><span class="font-extrabold text-base text-indigo-900">${t.title}</span>${t.note ? `<span class="text-xs text-gray-500 ml-2 bg-gray-200 px-2 py-0.5 rounded">${t.note}</span>` : ''}<div class="text-xs text-gray-400 font-mono mt-0.5">截止日期：${t.dueDate}</div></div><button onclick="deleteTodoTask('${t.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">刪除項目 ✕</button></div><div><span class="text-xs font-bold text-gray-600 mb-2 block">未繳交學生名單 (${pendingStudents.length} 人)：</span>${pendingStudents.length === 0 ? '<p class="text-xs text-emerald-600 font-bold">全班已全數繳交完成！🎉</p>' : `<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${pendingStudents.map(s => { const overdueDays = calculateOverdueDays(s.id, t.dueDate); return `<div class="p-2 bg-white border rounded-lg flex items-center justify-between text-xs"><div><span class="font-bold text-gray-800">${s.seatNo} ${s.name}</span>${overdueDays > 0 ? `<span class="ml-1.5 text-[10px] bg-rose-100 text-rose-800 border border-rose-300 px-1.5 py-0.5 rounded-full font-bold">逾期 ${overdueDays} 天</span>` : '<span class="ml-1.5 text-[10px] text-gray-400">未逾期</span>'}</div><button onclick="markStudentSubmitted('${t.id}', '${s.id}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 font-bold px-2 py-1 rounded transition text-[11px] interactive-control">✅ 銷案</button></div>`; }).join('')}</div>`}</div></div>`;
       }).join('');
     }
@@ -1396,7 +1420,7 @@
     function markStudentSubmitted(taskId, studentId) {
       const task = (appState.todoTasks || []).find(t => t.id === taskId);
       if (task) {
-        task.pendingStudentIds = task.pendingStudentIds.filter(id => id !== studentId);
+        task.pendingStudentIds = (task.pendingStudentIds || []).filter(id => id !== studentId);
         saveStateToCloud();
         renderTodoTaskList();
         renderIndividualTodoStats();
@@ -1424,7 +1448,7 @@
       }
 
       tbody.innerHTML = students.map(s => {
-        const studentTasks = tasks.filter(t => t.pendingStudentIds.includes(s.id));
+        const studentTasks = tasks.filter(t => (t.pendingStudentIds || []).includes(s.id));
         let totalOverdueDays = 0;
         studentTasks.forEach(t => { totalOverdueDays += calculateOverdueDays(s.id, t.dueDate); });
 
@@ -1438,7 +1462,7 @@
       }).join('');
     }
 
-    // ----------------- 新增：專刊與繕寫優良邏輯 -----------------
+    // ----------------- 專刊與繕寫優良邏輯 -----------------
     function initPublicationModule() {
       renderPubStudentCheckboxes();
       renderWriteStudentCheckboxes();
@@ -1448,7 +1472,6 @@
       renderExcellentWritingList();
     }
 
-    // 核取方塊生成
     function renderPubStudentCheckboxes() {
       const students = appState.students || [];
       const container = document.getElementById('pubStudentCheckboxes');
@@ -1463,7 +1486,6 @@
         students.map(s => `<label class="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer hover:bg-white p-1 rounded"><input type="checkbox" value="${s.id}" class="write-cb w-3.5 h-3.5 text-emerald-600 rounded"><span>${s.seatNo} ${s.name}</span></label>`).join('');
     }
 
-    // 專刊文章標籤設定
     function renderPubTags() {
       let tags = appState.pubTags;
       if (!tags || tags.length === 0) {
@@ -1495,7 +1517,6 @@
       alert(`🏷️ 已成功加入專屬標籤：「${newTag}」`);
     }
 
-    // 儲存文華專刊
     function savePublication() {
       const semester = document.getElementById('pubSemester').value;
       const round = document.getElementById('pubRound').value;
@@ -1520,7 +1541,6 @@
       alert('✅ 已成功儲存專刊紀錄！');
     }
 
-    // 群組化渲染專刊歷史
     function renderPublicationList() {
       const pubs = appState.publications || [];
       const students = appState.students || [];
@@ -1528,10 +1548,9 @@
 
       if (pubs.length === 0) { container.innerHTML = '<p class="text-gray-400 text-xs py-2">目前尚無專刊紀錄。</p>'; return; }
 
-      // 依據學期與次數進行群組化 (Grouping)
       const groupedPubs = {};
       pubs.forEach(p => {
-        const key = `${p.semester} ${p.round}`; // 例如: "五上 第一次"
+        const key = `${p.semester} ${p.round}`; 
         if (!groupedPubs[key]) groupedPubs[key] = [];
         groupedPubs[key].push(p);
       });
@@ -1542,7 +1561,7 @@
         htmlContent += `<h5 class="font-extrabold text-blue-900 bg-blue-100 px-2. py-1 rounded mb-2 text-xs flex items-center gap-1 border border-blue-200 shadow-sm">📌 ${groupKey} 入選名單</h5>`;
         
         items.forEach(p => {
-          const selectedStudents = students.filter(s => p.selectedStudentIds.includes(s.id));
+          const selectedStudents = students.filter(s => (p.selectedStudentIds || []).includes(s.id));
           htmlContent += `
             <div class="p-3 bg-white border border-blue-100 rounded-lg mb-2 shadow-sm ml-2 relative">
               <button onclick="deletePublication('${p.id}')" class="absolute top-2 right-2 text-xs text-gray-400 hover:text-red-500 p-1 interactive-control">✕</button>
@@ -1560,17 +1579,16 @@
 
     function deletePublication(id) {
       if (!confirm('確定要刪除這筆專刊紀錄嗎？')) return;
-      appState.publications = appState.publications.filter(p => p.id !== id);
+      appState.publications = (appState.publications || []).filter(p => p.id !== id);
       saveStateToCloud();
       renderPublicationList();
     }
 
-    // 繕寫自訂標籤邏輯
     function renderWritingTags() {
       let tags = appState.writingTags;
       if (!tags || tags.length === 0) {
         tags = ['國習', '數習', '聯絡簿', '作文'];
-        appState.writingTags = tags; // 寫入 state
+        appState.writingTags = tags; 
       }
 
       const container = document.getElementById('writingTagsContainer');
@@ -1597,9 +1615,8 @@
       alert(`🏷️ 已成功加入專屬標籤：「${newTag}」`);
     }
 
-    // 儲存繕寫優良
     function saveExcellentWriting() {
-      const semester = document.getElementById('writeSemester').value; // 新增：擷取學期
+      const semester = document.getElementById('writeSemester').value; 
       const category = document.getElementById('writeCategory').value.trim();
       const checkboxes = document.querySelectorAll('.write-cb:checked');
 
@@ -1609,7 +1626,7 @@
       if (!appState.excellentWritings) appState.excellentWritings = [];
       appState.excellentWritings.unshift({
         id: 'wr_' + Date.now(),
-        semester, // 紀錄學期
+        semester, 
         category,
         selectedStudentIds: Array.from(checkboxes).map(cb => cb.value),
         createdAt: new Date().toISOString().split('T')[0]
@@ -1630,8 +1647,7 @@
       if (writes.length === 0) { container.innerHTML = '<p class="text-gray-400 text-xs py-2">目前尚無繕寫優良紀錄。</p>'; return; }
 
       container.innerHTML = writes.map(w => {
-        const selectedStudents = students.filter(s => w.selectedStudentIds.includes(s.id));
-        // 若舊資料沒有 semester，則不顯示，否則顯示該標籤
+        const selectedStudents = students.filter(s => (w.selectedStudentIds || []).includes(s.id));
         const semTag = w.semester ? `<span class="text-[10px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold mr-1 border border-emerald-300">${w.semester}</span>` : '';
         
         return `<div class="p-3 bg-emerald-50/40 border border-emerald-100 rounded-lg mb-2">
@@ -1655,7 +1671,7 @@
 
     function deleteExcellentWriting(id) {
       if (!confirm('確定要刪除這筆繕寫優良紀錄嗎？')) return;
-      appState.excellentWritings = appState.excellentWritings.filter(w => w.id !== id);
+      appState.excellentWritings = (appState.excellentWritings || []).filter(w => w.id !== id);
       saveStateToCloud();
       renderExcellentWritingList();
     }
@@ -1698,18 +1714,44 @@
 
       if (events.length === 0) { listContainer.innerHTML = '<p class="text-gray-400 text-sm py-2">尚未匯入行事曆事件。</p>'; return; }
 
-      listContainer.innerHTML = events.map(evt => `
-        <div class="py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded">
-          <div class="flex items-center gap-3">
-            <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs">${evt.date}</span>
-            <span class="font-bold text-gray-800 text-sm">${evt.title}</span>
-          </div>
-          <div class="flex items-center gap-2 interactive-control">
-            <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-2.5 py-1 rounded transition">✏️ 編輯</button>
-            <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
-          </div>
-        </div>
-      `).join('');
+      // 依照月份群組化
+      const groupedEvents = {};
+      events.forEach(evt => {
+        const month = evt.date.substring(0, 7); // 擷取 YYYY-MM
+        if (!groupedEvents[month]) groupedEvents[month] = [];
+        groupedEvents[month].push(evt);
+      });
+
+      // 依照月份排序輸出
+      const sortedMonths = Object.keys(groupedEvents).sort();
+
+      listContainer.innerHTML = sortedMonths.map(month => {
+        const monthEvents = groupedEvents[month];
+        return `
+          <details class="group mb-3 bg-white border border-gray-200 rounded-xl shadow-sm open:bg-slate-50 transition-colors">
+            <summary class="flex justify-between items-center font-bold cursor-pointer list-none p-4 hover:bg-slate-50 transition rounded-xl text-slate-800 [&::-webkit-details-marker]:hidden">
+              <span class="flex items-center gap-2">📅 ${month} 行事曆 <span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold">${monthEvents.length} 筆</span></span>
+              <span class="transition-transform duration-300 group-open:rotate-180 text-gray-400">
+                <svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="20"><path d="M6 9l6 6 6-6"></path></svg>
+              </span>
+            </summary>
+            <div class="px-4 pb-4 divide-y divide-gray-100 mt-1">
+              ${monthEvents.map(evt => `
+                <div class="py-2.5 flex justify-between items-center px-1 hover:bg-white rounded transition">
+                  <div class="flex items-center gap-3">
+                    <span class="font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-xs shadow-sm">${evt.date}</span>
+                    <span class="font-bold text-gray-800 text-sm">${evt.title}</span>
+                  </div>
+                  <div class="flex items-center gap-2 interactive-control">
+                    <button onclick="editCalendarEvent('${evt.id}')" class="text-xs bg-amber-50 hover:bg-amber-100 text-amber-700 border border-amber-300 font-bold px-2.5 py-1 rounded transition">✏️ 編輯</button>
+                    <button onclick="deleteCalendarEvent('${evt.id}')" class="text-xs text-gray-400 hover:text-red-500 p-1">✕</button>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </details>
+        `;
+      }).join('');
     }
 
     function editCalendarEvent(id) {
@@ -2401,7 +2443,7 @@
               <span class="text-[10px] text-gray-400 font-mono mb-1">第 ${r+1} 行 · 第 ${c+1} 列</span>
               <select onchange="updateSeat('${seatKey}', this.value)" class="w-full border rounded-lg p-2 text-xs font-bold text-gray-800 bg-gray-50 outline-none interactive-control">
                 <option value="">-- 空座位 --</option>
-                ${availableStudents.map(s => `<option value="${s.id}" ${s.id === currentStudentId ? 'selected' : ''}>${s.seatNo} ${s.name}</option>`).join('')}
+                ${availableStudents.map(s => `<option value="${s.id}" ${s.id === currentStudentId ? 'selected' : ''}>${s.seatNo}${s.name}</option>`).join('')}
               </select>
             </div>
           `;
