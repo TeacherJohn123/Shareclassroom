@@ -1,1464 +1,1464 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-  <title>班級經營公告欄 (家長與學生專用)</title>
+  <title>班級經營公告欄 (家長與學生專用)</title>
 
-  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
-  <style>
-    * {
-      -webkit-tap-highlight-color: transparent;
-    }
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
 
-    html,
-    body {
-      margin: 0;
-      padding: 0;
-      min-height: 100%;
-    }
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+    }
 
-    body {
-      -webkit-text-size-adjust: 100%;
-    }
+    body {
+      -webkit-text-size-adjust: 100%;
+    }
 
-    button {
-      cursor: pointer;
-      -webkit-appearance: none;
-      appearance: none;
-      touch-action: manipulation;
-    }
+    button {
+      cursor: pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      touch-action: manipulation;
+    }
 
-    .tab-content {
-      display: none;
-    }
+    .tab-content {
+      display: none;
+    }
 
-    .tab-content.active {
-      display: block;
-    }
+    .tab-content.active {
+      display: block;
+    }
 
-    .text-5xl-custom {
-      font-size: 2.5rem !important;
-      line-height: 1.4 !important;
-    }
+    .text-5xl-custom {
+      font-size: 2.5rem !important;
+      line-height: 1.4 !important;
+    }
 
-    /* iPad / Safari 滾動 */
-    .ios-scroll {
-      -webkit-overflow-scrolling: touch;
-    }
+    /* iPad / Safari 滾動 */
+    .ios-scroll {
+      -webkit-overflow-scrolling: touch;
+    }
 
-    /* 點擊按鈕時的明顯效果 */
-    .nav-btn:active,
-    .action-btn:active {
-      transform: scale(0.98);
-    }
+    /* 點擊按鈕時的明顯效果 */
+    .nav-btn:active,
+    .action-btn:active {
+      transform: scale(0.98);
+    }
 
-    /* 行事曆卡片 */
-    .calendar-event {
-      transition: background-color 0.15s ease;
-    }
+    /* 行事曆卡片 */
+    .calendar-event {
+      transition: background-color 0.15s ease;
+    }
 
-    .calendar-event:active {
-      background-color: #fef3c7;
-    }
+    .calendar-event:active {
+      background-color: #fef3c7;
+    }
 
-    /* Firebase 錯誤提示 */
-    #systemError {
-      display: none;
-    }
-  </style>
+    /* Firebase 錯誤提示 */
+    #systemError {
+      display: none;
+    }
+  </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen text-gray-800 flex flex-col md:flex-row">
 
-  <!-- =========================================================
-       左側選單
-  ========================================================== -->
+  <!-- =========================================================
+       左側選單
+  ========================================================== -->
 
-  <aside class="w-full md:w-64 bg-slate-800 text-white md:min-h-screen p-4 flex flex-col justify-between shrink-0">
+  <aside class="w-full md:w-64 bg-slate-800 text-white md:min-h-screen p-4 flex flex-col justify-between shrink-0">
 
-    <div>
+    <div>
 
-      <h1 class="text-xl font-bold mb-2 flex items-center gap-2">
-        🏫 班級公告欄
-      </h1>
+      <h1 class="text-xl font-bold mb-2 flex items-center gap-2">
+        🏫 班級公告欄
+      </h1>
 
-      <div class="bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs px-2.5 py-1 rounded mb-4 font-bold">
-        📢 每日聯絡簿與行事曆公告
-      </div>
+      <div class="bg-sky-500/20 border border-sky-400/40 text-sky-200 text-xs px-2.5 py-1 rounded mb-4 font-bold">
+        📢 每日聯絡簿與行事曆公告
+      </div>
 
-      <nav
-        class="flex overflow-x-auto gap-2 md:flex-col md:space-y-2 md:gap-0 pb-2 md:pb-0 scrollbar-hide ios-scroll"
-        id="sidebar-nav"
-      >
+      <nav
+        class="flex overflow-x-auto gap-2 md:flex-col md:space-y-2 md:gap-0 pb-2 md:pb-0 scrollbar-hide ios-scroll"
+        id="sidebar-nav"
+      >
 
-        <button
-          type="button"
-          id="btn-contactbook"
-          class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2"
-        >
-          📖 每日聯絡簿
-        </button>
+        <button
+          type="button"
+          id="btn-contactbook"
+          class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg bg-slate-700 font-bold flex items-center gap-2"
+        >
+          📖 每日聯絡簿
+        </button>
 
-        <button
-          type="button"
-          id="btn-calendar"
-          class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2"
-        >
-          📅 班級行事曆
-        </button>
+        <button
+          type="button"
+          id="btn-calendar"
+          class="nav-btn whitespace-nowrap w-auto md:w-full text-left p-2.5 rounded-lg hover:bg-slate-700 flex items-center gap-2"
+        >
+          📅 班級行事曆
+        </button>
 
-      </nav>
+      </nav>
 
-    </div>
+    </div>
 
-    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3 mt-4">
-      家長唯讀模組 v1.2（iPad 高相容性版）
-    </div>
+    <div class="text-xs text-slate-400 border-t border-slate-700 pt-3 mt-4">
+      家長唯讀模組 v1.2（iPad 高相容性版）
+    </div>
 
-  </aside>
+  </aside>
 
 
-  <!-- =========================================================
-       主內容
-  ========================================================== -->
+  <!-- =========================================================
+       主內容
+  ========================================================== -->
 
-  <main class="flex-1 p-4 md:p-6 overflow-y-auto ios-scroll">
+  <main class="flex-1 p-4 md:p-6 overflow-y-auto ios-scroll">
 
 
-    <!-- =======================================================
-         每日聯絡簿
-    ======================================================== -->
+    <!-- =======================================================
+         每日聯絡簿
+    ======================================================== -->
 
-    <section
-      id="tab-contactbook"
-      class="tab-content active space-y-6"
-    >
+    <section
+      id="tab-contactbook"
+      class="tab-content active space-y-6"
+    >
 
-      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">
-        📖 每日聯絡簿
-      </h2>
+      <h2 class="text-2xl font-bold border-b pb-2 text-slate-800">
+        📖 每日聯絡簿
+      </h2>
 
 
-      <!-- 日期 -->
+      <!-- 日期 -->
 
-      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
 
-        <div class="flex flex-wrap gap-4 items-center mb-6">
+        <div class="flex flex-wrap gap-4 items-center mb-6">
 
-          <label class="font-bold text-gray-700 text-lg">
-            日期選擇：
-          </label>
+          <label class="font-bold text-gray-700 text-lg">
+            日期選擇：
+          </label>
 
-          <input
-            type="date"
-            id="cbDate"
-            class="border rounded-lg p-2.5 text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
-          >
+          <input
+            type="date"
+            id="cbDate"
+            class="border rounded-lg p-2.5 text-lg font-bold focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+          >
 
-        </div>
+        </div>
 
 
-        <!-- 今日事件 + 值日生 -->
+        <!-- 今日事件 + 值日生 -->
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
 
 
-          <!-- 行事曆 -->
+          <!-- 行事曆 -->
 
-          <div
-            id="todayEventsBox"
-            class="md:col-span-2 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden"
-          >
+          <div
+            id="todayEventsBox"
+            class="md:col-span-2 p-4 bg-amber-50 border-2 border-amber-300 rounded-xl text-amber-950 hidden"
+          >
 
-            <div class="font-bold flex items-center gap-2 mb-2 text-xl">
-              <span>📌 當日行事曆事件：</span>
-            </div>
+            <div class="font-bold flex items-center gap-2 mb-2 text-xl">
+              <span>📌 當日行事曆事件：</span>
+            </div>
 
-            <ul
-              id="todayEventsList"
-              class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"
-            ></ul>
+            <ul
+              id="todayEventsList"
+              class="list-disc list-inside space-y-1 text-amber-900 font-extrabold text-2xl"
+            ></ul>
 
-          </div>
+          </div>
 
 
-          <!-- 值日生 -->
+          <!-- 值日生 -->
 
-          <div
-            class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between"
-          >
+          <div
+            class="md:col-span-1 p-4 bg-sky-50 border-2 border-sky-300 rounded-xl text-sky-950 flex flex-col justify-between"
+          >
 
-            <div>
+            <div>
 
-              <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center justify-between mb-2">
 
-                <span class="font-bold text-lg flex items-center gap-1">
-                  🧹 今日值日生：
-                </span>
+                <span class="font-bold text-lg flex items-center gap-1">
+                  🧹 今日值日生：
+                </span>
 
-              </div>
+              </div>
 
-              <div
-                id="dutyStudentsDisplay"
-                class="text-2xl font-extrabold text-sky-900 mb-3 flex flex-wrap gap-2"
-              >
-                <span class="text-gray-400 text-sm font-normal">
-                  讀取中...
-                </span>
-              </div>
+              <div
+                id="dutyStudentsDisplay"
+                class="text-2xl font-extrabold text-sky-900 mb-3 flex flex-wrap gap-2"
+              >
+                <span class="text-gray-400 text-sm font-normal">
+                  讀取中...
+                </span>
+              </div>
 
-            </div>
+            </div>
 
-          </div>
+          </div>
 
-        </div>
+        </div>
 
 
-        <!-- 聯絡事項 -->
+        <!-- 聯絡事項 -->
 
-        <div class="mb-6">
+        <div class="mb-6">
 
-          <label class="block font-bold text-gray-800 text-xl mb-2">
-            聯絡事項與回家作業：
-          </label>
+          <label class="block font-bold text-gray-800 text-xl mb-2">
+            聯絡事項與回家作業：
+          </label>
 
-          <div
-            id="cbContentReadOnlyDisplay"
-            class="text-5xl-custom font-bold text-gray-900 whitespace-pre-wrap p-4 bg-gray-50 border rounded-xl min-h-[120px]"
-          >
-            讀取中...
-          </div>
+          <div
+            id="cbContentReadOnlyDisplay"
+            class="text-5xl-custom font-bold text-gray-900 whitespace-pre-wrap p-4 bg-gray-50 border rounded-xl min-h-[120px]"
+          >
+            讀取中...
+          </div>
 
-        </div>
+        </div>
 
-      </div>
+      </div>
 
 
-      <!-- 歷史聯絡簿 -->
+      <!-- 歷史聯絡簿 -->
 
-      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
 
-        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
-          🗂️ 歷史聯絡簿選單
-        </h3>
+        <h3 class="font-bold text-lg mb-4 text-gray-800 flex items-center gap-2">
+          🗂️ 歷史聯絡簿選單
+        </h3>
 
-        <div
-          id="cbHistoryList"
-          class="divide-y divide-gray-100"
-        >
+        <div
+          id="cbHistoryList"
+          class="divide-y divide-gray-100"
+        >
 
-          <p class="text-gray-400 text-sm">
-            目前沒有歷史紀錄
-          </p>
+          <p class="text-gray-400 text-sm">
+            目前沒有歷史紀錄
+          </p>
 
-        </div>
+        </div>
 
-      </div>
+      </div>
 
-    </section>
+    </section>
 
 
 
-    <!-- =======================================================
-         班級行事曆
-    ======================================================== -->
+    <!-- =======================================================
+         班級行事曆
+    ======================================================== -->
 
-    <section
-      id="tab-calendar"
-      class="tab-content space-y-6"
-    >
+    <section
+      id="tab-calendar"
+      class="tab-content space-y-6"
+    >
 
-      <div class="flex justify-between items-center border-b pb-2">
+      <div class="flex justify-between items-center border-b pb-2">
 
-        <h2 class="text-2xl font-bold text-slate-800">
-          📅 班級行事曆
-        </h2>
+        <h2 class="text-2xl font-bold text-slate-800">
+          📅 班級行事曆
+        </h2>
 
-        <span
-          id="eventCount"
-          class="text-sm bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full"
-        >
-          共 0 筆事件
-        </span>
+        <span
+          id="eventCount"
+          class="text-sm bg-amber-100 text-amber-800 font-bold px-3 py-1 rounded-full"
+        >
+          共 0 筆事件
+        </span>
 
-      </div>
+      </div>
 
 
-      <!-- 行事曆清單 -->
+      <!-- 行事曆清單 -->
 
-      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
+      <div class="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-gray-200">
 
-        <h3 class="font-bold text-lg mb-4 text-gray-800">
-          📋 所有行程清單
-        </h3>
+        <h3 class="font-bold text-lg mb-4 text-gray-800">
+          📋 所有行程清單
+        </h3>
 
-        <div
-          id="calendarList"
-          class="divide-y divide-gray-100"
-        >
+        <div
+          id="calendarList"
+          class="divide-y divide-gray-100"
+        >
 
-          <p class="text-gray-400 text-sm py-2">
-            讀取中...
-          </p>
+          <p class="text-gray-400 text-sm py-2">
+            讀取中...
+          </p>
 
-        </div>
+        </div>
 
-      </div>
+      </div>
 
-    </section>
+    </section>
 
 
-    <!-- 系統錯誤提示 -->
+    <!-- 系統錯誤提示 -->
 
-    <div
-      id="systemError"
-      class="mt-6 bg-red-50 border-2 border-red-300 text-red-900 rounded-xl p-4"
-    >
-      <div class="font-bold text-lg mb-1">
-        ⚠️ 系統讀取發生問題
-      </div>
+    <div
+      id="systemError"
+      class="mt-6 bg-red-50 border-2 border-red-300 text-red-900 rounded-xl p-4"
+    >
+      <div class="font-bold text-lg mb-1">
+        ⚠️ 系統讀取發生問題
+      </div>
 
-      <div id="systemErrorMessage" class="text-sm"></div>
-    </div>
+      <div id="systemErrorMessage" class="text-sm"></div>
+    </div>
 
-  </main>
+  </main>
 
 
-  <!-- =========================================================
-       JavaScript
-  ========================================================== -->
+  <!-- =========================================================
+       JavaScript
+  ========================================================== -->
 
-  <script>
+  <script>
 
-    /* =========================================================
-       Firebase 設定
-    ========================================================== */
+    /* =========================================================
+       Firebase 設定
+    ========================================================== */
 
-    var firebaseConfig = {
+    var firebaseConfig = {
 
-      apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
+      apiKey: "AIzaSyB7k5cMv5hgHZ_LCAKjXo8EuYMVdL5x3so",
 
-      authDomain:
-        "class-tools-49588.firebaseapp.com",
+      authDomain:
+        "class-tools-49588.firebaseapp.com",
 
-      databaseURL:
-        "https://class-tools-49588-default-rtdb.firebaseio.com",
+      databaseURL:
+        "https://class-tools-49588-default-rtdb.firebaseio.com",
 
-      projectId:
-        "class-tools-49588",
+      projectId:
+        "class-tools-49588",
 
-      storageBucket:
-        "class-tools-49588.firebasestorage.app",
+      storageBucket:
+        "class-tools-49588.firebasestorage.app",
 
-      messagingSenderId:
-        "126467689374",
+      messagingSenderId:
+        "126467689374",
 
-      appId:
-        "1:126467689374:web:140f12f8830ab4eee9e48f",
+      appId:
+        "1:126467689374:web:140f12f8830ab4eee9e48f",
 
-      measurementId:
-        "G-GBLFFGWKR7"
+      measurementId:
+        "G-GBLFFGWKR7"
 
-    };
+    };
 
 
-    /* =========================================================
-       Firebase 初始化
-    ========================================================== */
+    /* =========================================================
+       Firebase 初始化
+    ========================================================== */
 
-    var db = null;
+    var db = null;
 
-    var firebaseReady = false;
+    var firebaseReady = false;
 
-    try {
+    try {
 
-      if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-      }
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
 
-      db = firebase.database();
+      db = firebase.database();
 
-      firebaseReady = true;
+      firebaseReady = true;
 
-    } catch (error) {
+    } catch (error) {
 
-      console.error("Firebase 初始化失敗：", error);
+      console.error("Firebase 初始化失敗：", error);
 
-      showSystemError(
-        "Firebase 初始化失敗，請確認網路連線或 Firebase 設定。"
-      );
+      showSystemError(
+        "Firebase 初始化失敗，請確認網路連線或 Firebase 設定。"
+      );
 
-    }
+    }
 
 
-    /* =========================================================
-       網址參數
-    ========================================================== */
+    /* =========================================================
+       網址參數
+    ========================================================== */
 
-    var urlParams =
-      new URLSearchParams(window.location.search);
+    var urlParams =
+      new URLSearchParams(window.location.search);
 
-    var classId =
-      urlParams.get("class") || "class1";
+    var classId =
+      urlParams.get("class") || "class1";
 
-    var dbPath =
-      "classroom_data_" + classId;
+    var dbPath =
+      "classroom_data_" + classId;
 
 
-    /* =========================================================
-       全域資料
-    ========================================================== */
+    /* =========================================================
+       全域資料
+    ========================================================== */
 
-    var appState = {};
+    var appState = {};
 
 
-    /* =========================================================
-       頁面初始化
-    ========================================================== */
+    /* =========================================================
+       頁面初始化
+    ========================================================== */
 
-    window.addEventListener("load", function() {
+    window.addEventListener("load", function() {
 
-      console.log("班級公告欄啟動");
+      console.log("班級公告欄啟動");
 
-      console.log("班級：", classId);
+      console.log("班級：", classId);
 
-      console.log("Firebase 路徑：", dbPath);
+      console.log("Firebase 路徑：", dbPath);
 
 
-      /* -------------------------------------------------------
-         先設定日期
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         先設定日期
+      ------------------------------------------------------- */
 
-      setTodayDate();
+      setTodayDate();
 
 
-      /* -------------------------------------------------------
-         綁定按鈕
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         綁定按鈕
+      ------------------------------------------------------- */
 
-      var contactBtn =
-        document.getElementById("btn-contactbook");
+      var contactBtn =
+        document.getElementById("btn-contactbook");
 
-      var calendarBtn =
-        document.getElementById("btn-calendar");
+      var calendarBtn =
+        document.getElementById("btn-calendar");
 
 
-      if (contactBtn) {
+      if (contactBtn) {
 
-        contactBtn.addEventListener(
-          "click",
-          function() {
+        contactBtn.addEventListener(
+          "click",
+          function() {
 
-            switchTab("contactbook");
+            switchTab("contactbook");
 
-          }
-        );
+          }
+        );
 
-      }
+      }
 
 
-      if (calendarBtn) {
+      if (calendarBtn) {
 
-        calendarBtn.addEventListener(
-          "click",
-          function() {
+        calendarBtn.addEventListener(
+          "click",
+          function() {
 
-            switchTab("calendar");
+            switchTab("calendar");
 
-          }
-        );
+          }
+        );
 
-      }
+      }
 
 
-      /* -------------------------------------------------------
-         Firebase
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         Firebase
+      ------------------------------------------------------- */
 
-      if (firebaseReady && db) {
+      if (firebaseReady && db) {
 
-        db.ref(dbPath).on(
+        db.ref(dbPath).on(
 
-          "value",
+          "value",
 
-          function(snapshot) {
+          function(snapshot) {
 
-            console.log("Firebase 資料更新");
+            console.log("Firebase 資料更新");
 
-            appState =
-              snapshot.val() || {};
+            appState =
+              snapshot.val() || {};
 
 
-            renderHistoryList();
+            renderHistoryList();
 
-            renderCalendarList();
+            renderCalendarList();
 
-            onDateChange();
+            onDateChange();
 
-          },
+          },
 
-          function(error) {
+          function(error) {
 
-            console.error(
-              "Firebase 讀取錯誤：",
-              error
-            );
+            console.error(
+              "Firebase 讀取錯誤：",
+              error
+            );
 
-            showSystemError(
-              "無法讀取班級資料：" +
-              error.message
-            );
+            showSystemError(
+              "無法讀取班級資料：" +
+              error.message
+            );
 
-          }
+          }
 
-        );
+        );
 
-      } else {
+      } else {
 
-        renderHistoryList();
+        renderHistoryList();
 
-        renderCalendarList();
+        renderCalendarList();
 
-        onDateChange();
+        onDateChange();
 
-      }
+      }
 
-    });
+    });
 
 
-    /* =========================================================
-       顯示錯誤
-    ========================================================== */
+    /* =========================================================
+       顯示錯誤
+    ========================================================== */
 
-    function showSystemError(message) {
+    function showSystemError(message) {
 
-      var errorBox =
-        document.getElementById("systemError");
+      var errorBox =
+        document.getElementById("systemError");
 
-      var errorMessage =
-        document.getElementById("systemErrorMessage");
+      var errorMessage =
+        document.getElementById("systemErrorMessage");
 
 
-      if (errorBox) {
-        errorBox.style.display = "block";
-      }
+      if (errorBox) {
+        errorBox.style.display = "block";
+      }
 
-      if (errorMessage) {
-        errorMessage.textContent = message;
-      }
+      if (errorMessage) {
+        errorMessage.textContent = message;
+      }
 
-    }
+    }
 
 
-    /* =========================================================
-       頁面切換
-    ========================================================== */
+    /* =========================================================
+       頁面切換
+    ========================================================== */
 
-    function switchTab(tabId) {
+    function switchTab(tabId) {
 
-      console.log(
-        "切換頁面：",
-        tabId
-      );
+      console.log(
+        "切換頁面：",
+        tabId
+      );
 
 
-      /* -------------------------------------------------------
-         隱藏所有頁面
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         隱藏所有頁面
+      ------------------------------------------------------- */
 
-      var tabs =
-        document.querySelectorAll(
-          ".tab-content"
-        );
+      var tabs =
+        document.querySelectorAll(
+          ".tab-content"
+        );
 
 
-      for (
-        var i = 0;
-        i < tabs.length;
-        i++
-      ) {
+      for (
+        var i = 0;
+        i < tabs.length;
+        i++
+      ) {
 
-        tabs[i].classList.remove(
-          "active"
-        );
+        tabs[i].classList.remove(
+          "active"
+        );
 
-      }
+      }
 
 
-      /* -------------------------------------------------------
-         所有按鈕取消啟用
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         所有按鈕取消啟用
+      ------------------------------------------------------- */
 
-      var btns =
-        document.querySelectorAll(
-          ".nav-btn"
-        );
+      var btns =
+        document.querySelectorAll(
+          ".nav-btn"
+        );
 
 
-      for (
-        var j = 0;
-        j < btns.length;
-        j++
-      ) {
+      for (
+        var j = 0;
+        j < btns.length;
+        j++
+      ) {
 
-        btns[j].classList.remove(
-          "bg-slate-700"
-        );
+        btns[j].classList.remove(
+          "bg-slate-700"
+        );
 
-        btns[j].classList.remove(
-          "font-bold"
-        );
+        btns[j].classList.remove(
+          "font-bold"
+        );
 
-      }
+      }
 
 
-      /* -------------------------------------------------------
-         顯示目標頁面
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         顯示目標頁面
+      ------------------------------------------------------- */
 
-      var targetTab =
-        document.getElementById(
-          "tab-" + tabId
-        );
+      var targetTab =
+        document.getElementById(
+          "tab-" + tabId
+        );
 
 
-      if (!targetTab) {
+      if (!targetTab) {
 
-        console.error(
-          "找不到頁面：tab-" + tabId
-        );
+        console.error(
+          "找不到頁面：tab-" + tabId
+        );
 
-        return;
+        return;
 
-      }
+      }
 
 
-      targetTab.classList.add(
-        "active"
-      );
+      targetTab.classList.add(
+        "active"
+      );
 
 
-      /* -------------------------------------------------------
-         啟用目標按鈕
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         啟用目標按鈕
+      ------------------------------------------------------- */
 
-      var targetBtn =
-        document.getElementById(
-          "btn-" + tabId
-        );
+      var targetBtn =
+        document.getElementById(
+          "btn-" + tabId
+        );
 
 
-      if (targetBtn) {
+      if (targetBtn) {
 
-        targetBtn.classList.add(
-          "bg-slate-700"
-        );
+        targetBtn.classList.add(
+          "bg-slate-700"
+        );
 
-        targetBtn.classList.add(
-          "font-bold"
-        );
+        targetBtn.classList.add(
+          "font-bold"
+        );
 
-      }
+      }
 
 
-      /* -------------------------------------------------------
-         額外重新整理
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         額外重新整理
+      ------------------------------------------------------- */
 
-      if (tabId === "calendar") {
+      if (tabId === "calendar") {
 
-        renderCalendarList();
+        renderCalendarList();
 
-      }
+      }
 
 
-      if (tabId === "contactbook") {
+      if (tabId === "contactbook") {
 
-        onDateChange();
+        onDateChange();
 
-      }
+      }
 
-    }
+    }
 
 
-    /* =========================================================
-       取得台灣日期
-    ========================================================== */
+    /* =========================================================
+       取得台灣日期
+    ========================================================== */
 
-    function getTaiwanDate() {
+    function getTaiwanDate() {
 
-      var now =
-        new Date();
+      var now =
+        new Date();
 
-      var year =
-        now.getFullYear();
+      var year =
+        now.getFullYear();
 
-      var month =
-        String(
-          now.getMonth() + 1
-        ).padStart(2, "0");
+      var month =
+        String(
+          now.getMonth() + 1
+        ).padStart(2, "0");
 
-      var day =
-        String(
-          now.getDate()
-        ).padStart(2, "0");
+      var day =
+        String(
+          now.getDate()
+        ).padStart(2, "0");
 
 
-      return (
-        year +
-        "-" +
-        month +
-        "-" +
-        day
-      );
+      return (
+        year +
+        "-" +
+        month +
+        "-" +
+        day
+      );
 
-    }
+    }
 
 
-    /* =========================================================
-       設定今天日期
-    ========================================================== */
+    /* =========================================================
+       設定今天日期
+    ========================================================== */
 
-    function setTodayDate() {
+    function setTodayDate() {
 
-      var dateInput =
-        document.getElementById(
-          "cbDate"
-        );
+      var dateInput =
+        document.getElementById(
+          "cbDate"
+        );
 
 
-      if (!dateInput) {
-        return;
-      }
+      if (!dateInput) {
+        return;
+      }
 
 
-      if (!dateInput.value) {
+      if (!dateInput.value) {
 
-        dateInput.value =
-          getTaiwanDate();
+        dateInput.value =
+          getTaiwanDate();
 
-      }
+      }
 
 
-      onDateChange();
+      onDateChange();
 
-    }
+    }
 
 
-    /* =========================================================
-       日期變更
-    ========================================================== */
+    /* =========================================================
+       日期變更
+    ========================================================== */
 
-    function onDateChange() {
+    function onDateChange() {
 
-      var dateInput =
-        document.getElementById(
-          "cbDate"
-        );
+      var dateInput =
+        document.getElementById(
+          "cbDate"
+        );
 
 
-      if (!dateInput) {
-        return;
-      }
+      if (!dateInput) {
+        return;
+      }
 
 
-      var currentDate =
-        dateInput.value;
+      var currentDate =
+        dateInput.value;
 
 
-      var records =
-        Array.isArray(
-          appState.contactBooks
-        )
-        ? appState.contactBooks
-        : [];
+      var records =
+        Array.isArray(
+          appState.contactBooks
+        )
+        ? appState.contactBooks
+        : [];
 
 
-      var currentRecord =
-        null;
+      var currentRecord =
+        null;
 
 
-      for (
-        var i = 0;
-        i < records.length;
-        i++
-      ) {
+      for (
+        var i = 0;
+        i < records.length;
+        i++
+      ) {
 
-        if (
-          records[i] &&
-          records[i].date === currentDate
-        ) {
+        if (
+          records[i] &&
+          records[i].date === currentDate
+        ) {
 
-          currentRecord =
-            records[i];
+          currentRecord =
+            records[i];
 
-          break;
+          break;
 
-        }
+        }
 
-      }
+      }
 
 
-      var displayDiv =
-        document.getElementById(
-          "cbContentReadOnlyDisplay"
-        );
+      var displayDiv =
+        document.getElementById(
+          "cbContentReadOnlyDisplay"
+        );
 
 
-      if (currentRecord) {
+      if (currentRecord) {
 
-        displayDiv.textContent =
-          currentRecord.content || "";
+        displayDiv.textContent =
+          currentRecord.content || "";
 
-      } else {
+      } else {
 
-        displayDiv.textContent =
-          "老師尚未發布該日的聯絡簿事項。";
+        displayDiv.textContent =
+          "老師尚未發布該日的聯絡簿事項。";
 
-      }
+      }
 
 
-      checkTodayEvents();
+      checkTodayEvents();
 
-      loadDutyStudents();
+      loadDutyStudents();
 
-    }
+    }
 
 
-    /* =========================================================
-       顯示當日行事曆
-    ========================================================== */
+    /* =========================================================
+       顯示當日行事曆
+    ========================================================== */
 
-    function checkTodayEvents() {
+    function checkTodayEvents() {
 
-      var dateInput =
-        document.getElementById(
-          "cbDate"
-        );
+      var dateInput =
+        document.getElementById(
+          "cbDate"
+        );
 
 
-      if (!dateInput) {
-        return;
-      }
+      if (!dateInput) {
+        return;
+      }
 
 
-      var currentDate =
-        dateInput.value;
+      var currentDate =
+        dateInput.value;
 
 
-      var events =
-        Array.isArray(
-          appState.calendarEvents
-        )
-        ? appState.calendarEvents
-        : [];
+      var events =
+        Array.isArray(
+          appState.calendarEvents
+        )
+        ? appState.calendarEvents
+        : [];
 
 
-      var matchedEvents =
-        events.filter(
-          function(e) {
+      var matchedEvents =
+        events.filter(
+          function(e) {
 
-            return (
-              e &&
-              e.date === currentDate
-            );
+            return (
+              e &&
+              e.date === currentDate
+            );
 
-          }
-        );
+          }
+        );
 
 
-      var eventsBox =
-        document.getElementById(
-          "todayEventsBox"
-        );
+      var eventsBox =
+        document.getElementById(
+          "todayEventsBox"
+        );
 
-      var eventsList =
-        document.getElementById(
-          "todayEventsList"
-        );
+      var eventsList =
+        document.getElementById(
+          "todayEventsList"
+        );
 
 
-      if (
-        matchedEvents.length > 0
-      ) {
+      if (
+        matchedEvents.length > 0
+      ) {
 
-        eventsList.innerHTML = "";
+        eventsList.innerHTML = "";
 
 
-        for (
-          var i = 0;
-          i < matchedEvents.length;
-          i++
-        ) {
+        for (
+          var i = 0;
+          i < matchedEvents.length;
+          i++
+        ) {
 
-          var li =
-            document.createElement(
-              "li"
-            );
+          var li =
+            document.createElement(
+              "li"
+            );
 
-          li.textContent =
-            matchedEvents[i].title || "未命名事件";
+          li.textContent =
+            matchedEvents[i].title || "未命名事件";
 
-          eventsList.appendChild(li);
+          eventsList.appendChild(li);
 
-        }
+        }
 
 
-        eventsBox.classList.remove(
-          "hidden"
-        );
+        eventsBox.classList.remove(
+          "hidden"
+        );
 
-      } else {
+      } else {
 
-        eventsBox.classList.add(
-          "hidden"
-        );
+        eventsBox.classList.add(
+          "hidden"
+        );
 
-        eventsList.innerHTML = "";
+        eventsList.innerHTML = "";
 
-      }
+      }
 
-    }
+    }
 
 
-    /* =========================================================
-       值日生
-    ========================================================== */
+    /* =========================================================
+       值日生
+    ========================================================== */
 
-    function loadDutyStudents() {
+    function loadDutyStudents() {
 
-      var dateInput =
-        document.getElementById(
-          "cbDate"
-        );
+      var dateInput =
+        document.getElementById(
+          "cbDate"
+        );
 
 
-      if (!dateInput) {
-        return;
-      }
+      if (!dateInput) {
+        return;
+      }
 
 
-      var currentDate =
-        dateInput.value;
+      var currentDate =
+        dateInput.value;
 
 
-      var dutyMap =
-        appState.dutyRoster || {};
+      var dutyMap =
+        appState.dutyRoster || {};
 
 
-      var dutyTypeMap =
-        appState.dutyTypeRoster || {};
+      var dutyTypeMap =
+        appState.dutyTypeRoster || {};
 
 
-      var assignedNames =
-        Array.isArray(
-          dutyMap[currentDate]
-        )
-        ? dutyMap[currentDate]
-        : [];
+      var assignedNames =
+        Array.isArray(
+          dutyMap[currentDate]
+        )
+        ? dutyMap[currentDate]
+        : [];
 
 
-      var displayEl =
-        document.getElementById(
-          "dutyStudentsDisplay"
-        );
+      var displayEl =
+        document.getElementById(
+          "dutyStudentsDisplay"
+        );
 
 
-      if (
-        assignedNames.length > 0
-      ) {
+      if (
+        assignedNames.length > 0
+      ) {
 
-        var dateTypes =
-          dutyTypeMap[currentDate] || {};
+        var dateTypes =
+          dutyTypeMap[currentDate] || {};
 
 
-        displayEl.innerHTML = "";
+        displayEl.innerHTML = "";
 
 
-        for (
-          var i = 0;
-          i < assignedNames.length;
-          i++
-        ) {
+        for (
+          var i = 0;
+          i < assignedNames.length;
+          i++
+        ) {
 
-          var name =
-            assignedNames[i];
+          var name =
+            assignedNames[i];
 
 
-          var type =
-            dateTypes[name] ||
-            "normal";
+          var type =
+            dateTypes[name] ||
+            "normal";
 
 
-          var span =
-            document.createElement(
-              "span"
-            );
+          var span =
+            document.createElement(
+              "span"
+            );
 
 
-          span.className =
-            "inline-block px-3 py-1 rounded-lg text-xl font-bold";
+          span.className =
+            "inline-block px-3 py-1 rounded-lg text-xl font-bold";
 
 
-          if (type === "late") {
+          if (type === "late") {
 
-            span.className +=
-              " bg-orange-100 text-orange-950 border border-orange-300";
+            span.className +=
+              " bg-orange-100 text-orange-950 border border-orange-300";
 
-            span.textContent =
-              "⏰ " + name;
+            span.textContent =
+              "⏰ " + name;
 
-          }
+          }
 
-          else if (type === "beh") {
+          else if (type === "beh") {
 
-            span.className +=
-              " bg-rose-100 text-rose-950 border border-rose-300";
+            span.className +=
+              " bg-rose-100 text-rose-950 border border-rose-300";
 
-            span.textContent =
-              "🚨 " + name;
+            span.textContent =
+              "🚨 " + name;
 
-          }
+          }
 
-          else if (type === "corridor") {
+          else if (type === "corridor") {
 
-            span.className +=
-              " bg-purple-100 text-purple-950 border border-purple-300";
+            span.className +=
+              " bg-purple-100 text-purple-950 border border-purple-300";
 
-            span.textContent =
-              "🏃 " + name;
+            span.textContent =
+              "🏃 " + name;
 
-          }
+          }
 
-          else {
+          else {
 
-            span.className +=
-              " bg-sky-200 text-sky-950";
+            span.className +=
+              " bg-sky-200 text-sky-950";
 
-            span.textContent =
-              name;
+            span.textContent =
+              name;
 
-          }
+          }
 
 
-          displayEl.appendChild(
-            span
-          );
+          displayEl.appendChild(
+            span
+          );
 
-        }
+        }
 
-      }
+      }
 
-      else {
+      else {
 
-        displayEl.innerHTML =
-          '<span class="text-gray-400 text-sm font-normal">未安排值日生</span>';
+        displayEl.innerHTML =
+          '<span class="text-gray-400 text-sm font-normal">未安排值日生</span>';
 
-      }
+      }
 
-    }
+    }
 
 
-    /* =========================================================
-       歷史聯絡簿
-    ========================================================== */
+    /* =========================================================
+       歷史聯絡簿
+    ========================================================== */
 
-    function renderHistoryList() {
+    function renderHistoryList() {
 
-      var listContainer =
-        document.getElementById(
-          "cbHistoryList"
-        );
+      var listContainer =
+        document.getElementById(
+          "cbHistoryList"
+        );
 
 
-      if (!listContainer) {
-        return;
-      }
+      if (!listContainer) {
+        return;
+      }
 
 
-      var records =
-        Array.isArray(
-          appState.contactBooks
-        )
-        ? appState.contactBooks
-        : [];
+      var records =
+        Array.isArray(
+          appState.contactBooks
+        )
+        ? appState.contactBooks
+        : [];
 
 
-      if (
-        records.length === 0
-      ) {
+      if (
+        records.length === 0
+      ) {
 
-        listContainer.innerHTML =
-          '<p class="text-gray-400 text-sm">目前沒有歷史紀錄</p>';
+        listContainer.innerHTML =
+          '<p class="text-gray-400 text-sm">目前沒有歷史紀錄</p>';
 
-        return;
+        return;
 
-      }
+      }
 
 
-      listContainer.innerHTML = "";
+      listContainer.innerHTML = "";
 
 
-      for (
-        var i = 0;
-        i < records.length;
-        i++
-      ) {
+      for (
+        var i = 0;
+        i < records.length;
+        i++
+      ) {
 
-        var item =
-          records[i];
+        var item =
+          records[i];
 
 
-        var row =
-          document.createElement(
-            "div"
-          );
+        var row =
+          document.createElement(
+            "div"
+          );
 
 
-        row.className =
-          "py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded";
+        row.className =
+          "py-3 flex justify-between items-center hover:bg-gray-50 px-2 rounded";
 
 
-        var info =
-          document.createElement(
-            "div"
-          );
+        var info =
+          document.createElement(
+            "div"
+          );
 
 
-        var date =
-          document.createElement(
-            "span"
-          );
+        var date =
+          document.createElement(
+            "span"
+          );
 
 
-        date.className =
-          "font-bold text-blue-600 text-sm";
+        date.className =
+          "font-bold text-blue-600 text-sm";
 
 
-        date.textContent =
-          item.date || "";
+        date.textContent =
+          item.date || "";
 
 
-        var content =
-          document.createElement(
-            "p"
-          );
+        var content =
+          document.createElement(
+            "p"
+          );
 
 
-        content.className =
-          "text-xs text-gray-500 truncate max-w-md mt-0.5";
+        content.className =
+          "text-xs text-gray-500 truncate max-w-md mt-0.5";
 
 
-        content.textContent =
-          (item.content || "")
-            .replace(/\n/g, " ");
+        content.textContent =
+          (item.content || "")
+            .replace(/\n/g, " ");
 
 
-        info.appendChild(
-          date
-        );
+        info.appendChild(
+          date
+        );
 
-        info.appendChild(
-          content
-        );
+        info.appendChild(
+          content
+        );
 
 
-        var button =
-          document.createElement(
-            "button"
-          );
+        var button =
+          document.createElement(
+            "button"
+          );
 
 
-        button.type =
-          "button";
+        button.type =
+          "button";
 
 
-        button.className =
-          "history-btn text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition";
+        button.className =
+          "history-btn text-xs bg-blue-50 hover:bg-blue-100 text-blue-600 font-bold px-3 py-1.5 rounded border border-blue-200 transition";
 
 
-        button.textContent =
-          "🔍 查看";
+        button.textContent =
+          "🔍 查看";
 
 
-        /* -------------------------------------------------------
-           重點：
-           不再使用 onclick="loadRecord(...)"
-           改用 addEventListener
-        ------------------------------------------------------- */
+        /* -------------------------------------------------------
+           重點：
+           不再使用 onclick="loadRecord(...)"
+           改用 addEventListener
+        ------------------------------------------------------- */
 
-        button.addEventListener(
-          "click",
-          function(recordDate) {
+        button.addEventListener(
+          "click",
+          function(recordDate) {
 
-            return function() {
+            return function() {
 
-              loadRecord(
-                recordDate
-              );
+              loadRecord(
+                recordDate
+              );
 
-            };
+            };
 
-          }(item.date)
-        );
+          }(item.date)
+        );
 
 
-        row.appendChild(
-          info
-        );
+        row.appendChild(
+          info
+        );
 
-        row.appendChild(
-          button
-        );
+        row.appendChild(
+          button
+        );
 
 
-        listContainer.appendChild(
-          row
-        );
+        listContainer.appendChild(
+          row
+        );
 
-      }
+      }
 
-    }
+    }
 
 
-    /* =========================================================
-       載入歷史聯絡簿
-    ========================================================== */
+    /* =========================================================
+       載入歷史聯絡簿
+    ========================================================== */
 
-    function loadRecord(date) {
+    function loadRecord(date) {
 
-      var dateInput =
-        document.getElementById(
-          "cbDate"
-        );
+      var dateInput =
+        document.getElementById(
+          "cbDate"
+        );
 
 
-      if (!dateInput) {
-        return;
-      }
+      if (!dateInput) {
+        return;
+      }
 
 
-      dateInput.value =
-        date;
+      dateInput.value =
+        date;
 
 
-      onDateChange();
+      onDateChange();
 
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
 
-    }
+    }
 
 
-    /* =========================================================
-       行事曆
-    ========================================================== */
+    /* =========================================================
+       行事曆
+    ========================================================== */
 
-    function renderCalendarList() {
+    function renderCalendarList() {
 
-      var events =
-        Array.isArray(
-          appState.calendarEvents
-        )
-        ? appState.calendarEvents
-        : [];
+      var events =
+        Array.isArray(
+          appState.calendarEvents
+        )
+        ? appState.calendarEvents
+        : [];
 
 
-      var countEl =
-        document.getElementById(
-          "eventCount"
-        );
+      var countEl =
+        document.getElementById(
+          "eventCount"
+        );
 
 
-      var listContainer =
-        document.getElementById(
-          "calendarList"
-        );
+      var listContainer =
+        document.getElementById(
+          "calendarList"
+        );
 
 
-      if (!countEl || !listContainer) {
-        return;
-      }
+      if (!countEl || !listContainer) {
+        return;
+      }
 
 
-      countEl.textContent =
-        "共 " +
-        events.length +
-        " 筆事件";
+      countEl.textContent =
+        "共 " +
+        events.length +
+        " 筆事件";
 
 
-      /* -------------------------------------------------------
-         沒有事件
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         沒有事件
+      ------------------------------------------------------- */
 
-      if (
-        events.length === 0
-      ) {
+      if (
+        events.length === 0
+      ) {
 
-        listContainer.innerHTML =
-          '<p class="text-gray-400 text-sm py-2">目前無行事曆事件。</p>';
+        listContainer.innerHTML =
+          '<p class="text-gray-400 text-sm py-2">目前無行事曆事件。</p>';
 
-        return;
+        return;
 
-      }
+      }
 
 
-      /* -------------------------------------------------------
-         排序
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         排序
+      ------------------------------------------------------- */
 
-      var sortedEvents =
-        events.slice().sort(
-          function(a, b) {
+      var sortedEvents =
+        events.slice().sort(
+          function(a, b) {
 
-            var dateA =
-              a && a.date
-                ? a.date
-                : "";
+            var dateA =
+              a && a.date
+                ? a.date
+                : "";
 
-            var dateB =
-              b && b.date
-                ? b.date
-                : "";
+            var dateB =
+              b && b.date
+                ? b.date
+                : "";
 
 
-            return dateA.localeCompare(
-              dateB
-            );
+            return dateA.localeCompare(
+              dateB
+            );
 
-          }
-        );
+          }
+        );
 
 
-      listContainer.innerHTML = "";
+      listContainer.innerHTML = "";
 
 
-      /* -------------------------------------------------------
-         建立事件
-      ------------------------------------------------------- */
+      /* -------------------------------------------------------
+         建立事件
+      ------------------------------------------------------- */
 
-      for (
-        var i = 0;
-        i < sortedEvents.length;
-        i++
-      ) {
+      for (
+        var i = 0;
+        i < sortedEvents.length;
+        i++
+      ) {
 
-        var evt =
-          sortedEvents[i];
+        var evt =
+          sortedEvents[i];
 
 
-        var row =
-          document.createElement(
-            "div"
-          );
+        var row =
+          document.createElement(
+            "div"
+          );
 
 
-        row.className =
-          "calendar-event py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 hover:bg-gray-50 px-2 rounded";
+        row.className =
+          "calendar-event py-4 flex flex-col md:flex-row md:justify-between md:items-center gap-2 hover:bg-gray-50 px-2 rounded";
 
 
-        var left =
-          document.createElement(
-            "div"
-          );
+        var left =
+          document.createElement(
+            "div"
+          );
 
 
-        left.className =
-          "flex items-center gap-3";
+        left.className =
+          "flex items-center gap-3";
 
 
-        var date =
-          document.createElement(
-            "span"
-          );
+        var date =
+          document.createElement(
+            "span"
+          );
 
 
-        date.className =
-          "font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-sm";
+        date.className =
+          "font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200 text-sm";
 
 
-        date.textContent =
-          evt.date || "未設定日期";
+        date.textContent =
+          evt.date || "未設定日期";
 
 
-        var title =
-          document.createElement(
-            "span"
-          );
+        var title =
+          document.createElement(
+            "span"
+          );
 
 
-        title.className =
-          "font-bold text-gray-800 text-base";
+        title.className =
+          "font-bold text-gray-800 text-base";
 
 
-        title.textContent =
-          evt.title || "未命名事件";
+        title.textContent =
+          evt.title || "未命名事件";
 
 
-        left.appendChild(
-          date
-        );
+        left.appendChild(
+          date
+        );
 
-        left.appendChild(
-          title
-        );
+        left.appendChild(
+          title
+        );
 
 
-        row.appendChild(
-          left
-        );
+        row.appendChild(
+          left
+        );
 
 
-        listContainer.appendChild(
-          row
-        );
+        listContainer.appendChild(
+          row
+        );
 
-      }
+      }
 
-    }
+    }
 
 
-    /* =========================================================
-       日期 input change
-    ========================================================== */
+    /* =========================================================
+       日期 input change
+    ========================================================== */
 
-    window.addEventListener(
-      "DOMContentLoaded",
-      function() {
+    window.addEventListener(
+      "DOMContentLoaded",
+      function() {
 
-        var dateInput =
-          document.getElementById(
-            "cbDate"
-          );
+        var dateInput =
+          document.getElementById(
+            "cbDate"
+          );
 
 
-        if (dateInput) {
+        if (dateInput) {
 
-          dateInput.addEventListener(
-            "change",
-            function() {
+          dateInput.addEventListener(
+            "change",
+            function() {
 
-              onDateChange();
+              onDateChange();
 
-            }
-          );
+            }
+          );
 
-        }
+        }
 
-      }
-    );
+      }
+    );
 
-  </script>
+  </script>
 
 </body>
 </html>
